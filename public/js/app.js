@@ -10,7 +10,7 @@ let selectedService = {
 };
 
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = window.location.origin;
 let authToken = sessionStorage.getItem("arsipgo_token") || "";
 let currentUser = JSON.parse(sessionStorage.getItem("arsipgo_user") || "null");
 let apiServices = [];
@@ -423,7 +423,7 @@ async function doLogin() {
         const role = data.user?.role;
 
         if (role === "admin") {
-            window.location.href = "http://localhost:3000/admin.html";
+        window.location.href = "/admin.html";
             return;
         }
 
@@ -1332,15 +1332,20 @@ packages();
 }
 
 function calculateTotalPriceText() {
-    if(selectedService.pricingType === 'document') {
+    if (selectedPackage.name === 'Paket Custom' ||
+        selectedService.pricingType === 'custom') {
+        return "Custom";
+    }
+
+    if (selectedService.pricingType === 'document') {
         let docTotal = documentCount * 5000;
         let packageTotal = selectedPackage.price || 0;
         let grandTotal = docTotal + packageTotal;
         return "Rp" + grandTotal.toLocaleString("id-ID");
-    } else if(selectedService.name === 'Paket Lengkap') {
+    } else if (selectedService.name === 'Paket Lengkap') {
         let grandTotal = 200000 + (selectedPackage.price || 0);
         return "Rp" + grandTotal.toLocaleString("id-ID");
-    } else if(selectedPackage.price) {
+    } else if (selectedPackage.price) {
         return "Rp" + selectedPackage.price.toLocaleString("id-ID");
     } else {
         return "Custom";
@@ -1352,138 +1357,102 @@ function calculateTotalPriceText() {
    PAYMENT
 ========================= */
 
+
 function payment() {
+    const price = calculateTotalPriceText();
+    const docTotal = documentCount * 5000;
+    const isCustom = price === "Custom";
 
-let price = calculateTotalPriceText();
-let docTotal = documentCount * 5000;
+    document.getElementById("app").innerHTML = `
+        ${header(true)}
 
-document.getElementById("app").innerHTML = `
+        <section class="page">
+            <div class="container">
+                <div class="booking">
+                    <div class="card">
+                        <h2>Konfirmasi Pesanan</h2>
+                        <br>
 
-${header(true)}
+                        <p>
+                            Periksa ringkasan pesanan sebelum membuat pesanan.
+                        </p>
 
-<section class="page">
+                        <br>
 
-<div class="container">
+                        <div class="form-group">
+                            <label for="paymentWhatsapp">
+                                Nomor WhatsApp
+                            </label>
+                            <input
+                                id="paymentWhatsapp"
+                                type="tel"
+                                placeholder="08xxxxxxxxxx"
+                                required
+                            >
+                            <small>
+                                Nomor ini belum disimpan ke database.
+                            </small>
+                        </div>
 
-<div class="booking">
+                        <button
+                            id="submitBookingButton"
+                            class="btn btn-primary"
+                            style="width:100%"
+                            onclick="success()">
+                            ${isCustom
+                                ? "Kirim Pesanan"
+                                : "Buat Pesanan (" + price + ")"}
+                        </button>
 
+                        <p style="margin-top:12px;font-size:13px;color:#71817b;">
+                            ${isCustom
+                                ? "Harga untuk pesanan custom ditetapkan admin. Kamu bisa membayar setelah harga ditetapkan."
+                                : "Setelah pesanan dibuat, kamu memilih metode pembayaran dan mengunggah bukti transfer."}
+                        </p>
+                    </div>
 
-<div class="card">
+                    <div class="card">
+                        <h3>Ringkasan Pesanan</h3>
+                        <br>
 
-<h2>
-Pembayaran
-</h2>
+                        <p>Layanan:<br>
+                            <strong>${selectedService.name}</strong>
+                        </p>
+                        <br>
 
-<br>
+                        ${selectedService.pricingType === "document"
+                            ? `<p>Jumlah Dokumen:<br>
+                                <strong>${documentCount} dokumen</strong>
+                                (${formatRupiah(docTotal)})</p><br>`
+                            : ""}
 
+                        <p>Paket Tenaga:<br>
+                            <strong>${selectedPackage.name}</strong>
+                        </p>
+                        <br>
 
-<div class="form-group">
+                        <p>Jumlah Tenaga:
+                            <strong>${selectedPackage.workers}</strong>
+                        </p>
+                        <br>
 
-<label>
-Metode Pembayaran
-</label>
+                        <p>Durasi:
+                            <strong>${selectedPackage.days}
+                            ${selectedPackage.days === "Custom" ? "" : "hari"}</strong>
+                        </p>
+                        <br>
 
-<select>
+                        <hr style="margin:20px 0;">
 
-<option>
-Transfer Bank
-</option>
-
-<option>
-E-Wallet
-</option>
-
-<option>
-Virtual Account
-</option>
-
-</select>
-
-</div>
-
-
-<div class="form-group">
-
-<label>
-Nomor WhatsApp
-</label>
-
-<input
-placeholder="08xxxxxxxxxx"
->
-
-</div>
-
-
-<button
-class="btn btn-primary"
-style="width:100%"
-onclick="success()">
-
-Bayar Sekarang (${price})
-
-</button>
-
-</div>
-
-
-<div class="card">
-
-<h3>
-Ringkasan Pesanan
-</h3>
-
-<br>
-
-<p>
-Layanan:
-<br>
-<strong>
-${selectedService.name}
-</strong>
-</p>
-
-<br>
-
-${selectedService.pricingType === 'document'
-? `<p>Jumlah Dokumen:<br><strong>${documentCount} dokumen</strong> (Rp${docTotal.toLocaleString("id-ID")})</p><br>`
-: ''
-}
-
-<p>
-Paket Tenaga:
-<br>
-<strong>
-${selectedPackage.name} ${selectedPackage.price ? '(Rp' + selectedPackage.price.toLocaleString("id-ID") + ')' : ''}
-</strong>
-</p>
-
-<br>
-
-<p>
-Jumlah Tenaga:
-<strong>
-${selectedPackage.workers}
-</strong>
-</p>
-
-<br>
-
-<hr><br>
-
-<p style="font-size:12px; color:#71817b;">Total Pembayaran:</p>
-<h2 style="color:#086b58">
-${price}
-</h2>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-`;
+                        <p style="font-size:12px;color:#71817b;">
+                            ${isCustom ? "Harga" : "Total"}
+                        </p>
+                        <h2 style="color:#086b58">${price}</h2>
+                    </div>
+                </div>
+            </div>
+        </section>
+    `;
 }
 
 
@@ -1491,82 +1460,554 @@ ${price}
    SUCCESS
 ========================= */
 
+
 async function success() {
     if (!requireLogin()) return;
-    const serviceId = getSelectedServiceId();
-    if (!serviceId) {
-        await loadApiServices();
-    }
-    const resolvedServiceId = getSelectedServiceId();
-    if (!resolvedServiceId) {
-        alert("Layanan belum berhasil dimuat dari server. Coba muat ulang halaman.");
+
+    const whatsappInput = document.getElementById("paymentWhatsapp");
+    const whatsapp = whatsappInput?.value.trim() || "";
+
+    const normalizedWhatsapp = whatsapp.replace(/[\s-]/g, "");
+
+    if (!/^08[0-9]{8,11}$/.test(normalizedWhatsapp)) {
+        alert("Masukkan nomor WhatsApp dengan format 08xxxxxxxxxx.");
         return;
     }
-    const payload = {
-        service_id: resolvedServiceId,
-        user_type: bookingDraft.userType || "Mahasiswa",
-        description: bookingDraft.description || "Pemesanan layanan " + selectedService.name,
-        document_count: selectedService.pricingType === "document" ? Number(bookingDraft.documentCount || documentCount) : null,
-        start_date: bookingDraft.startDate || null,
-        package_name: selectedPackage.name,
-        workers: Number.isInteger(selectedPackage.workers) ? selectedPackage.workers : null,
-        duration_days: Number.isInteger(selectedPackage.days) ? selectedPackage.days : null
-    };
+
+    const button = document.getElementById("submitBookingButton");
+    const buttonLabel = button ? button.textContent : "";
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Menyimpan pesanan...";
+    }
+
     try {
+        if (!getSelectedServiceId()) {
+            await loadApiServices();
+        }
+
+        const serviceId = getSelectedServiceId();
+
+        if (!serviceId) {
+            throw new Error("Layanan belum berhasil dimuat dari server.");
+        }
+
+        const payload = {
+            service_id: serviceId,
+            user_type: bookingDraft.userType || "Mahasiswa",
+            description:
+                bookingDraft.description ||
+                "Pemesanan layanan " + selectedService.name,
+            document_count:
+                selectedService.pricingType === "document"
+                    ? Number(bookingDraft.documentCount || documentCount)
+                    : null,
+            start_date: bookingDraft.startDate || null,
+            package_name: selectedPackage.name,
+            workers: Number.isInteger(selectedPackage.workers)
+                ? selectedPackage.workers
+                : null,
+            duration_days: Number.isInteger(selectedPackage.days)
+                ? selectedPackage.days
+                : null
+        };
+
         const data = await apiRequest("/api/bookings", {
             method: "POST",
             body: JSON.stringify(payload)
         });
+
         lastBooking = data.booking;
+
+        const canPayNow =
+            lastBooking.amount != null && Number(lastBooking.amount) > 0;
+
         document.getElementById("app").innerHTML = `
-        ${header(true)}
-        <section class="success">
-            <div class="success-icon">✓</div>
-            <h1>Pesanan Berhasil Dicatat! 🎉</h1>
-            <p>Nomor pesanan: <strong>#${lastBooking.id}</strong></p>
-            <p>Pesanan tersimpan di ArsipGo dengan status <strong>${lastBooking.status}</strong>.</p>
-            <p>Catatan: pembayaran online belum terintegrasi. Admin perlu mengonfirmasi pesanan ini.</p>
-            <button class="btn btn-primary" onclick="tracking()">Lihat Status Pesanan →</button>
-        </section>`;
+            ${header(true)}
+
+            <section class="success">
+                <div class="success-icon">✓</div>
+                <h1>Pesanan Berhasil Dibuat!</h1>
+
+                <p>Nomor pesanan:
+                    <strong>#${lastBooking.id}</strong>
+                </p>
+
+                <p>Total:
+                    <strong>${canPayNow
+                        ? formatRupiah(lastBooking.amount)
+                        : "Menunggu penetapan admin"}</strong>
+                </p>
+
+                <p style="margin:15px 0;">
+                    ${canPayNow
+                        ? "Pilih metode pembayaran, lalu unggah bukti pembayaranmu agar pesanan segera diproses."
+                        : "Harga pesanan ini ditetapkan admin. Kamu bisa membayar setelah harga ditetapkan."}
+                </p>
+
+                ${canPayNow
+                    ? `<button
+                        class="btn btn-primary"
+                        onclick="payBooking(${Number(lastBooking.id)})">
+                        Bayar Sekarang
+                       </button>
+                       <br><br>`
+                    : ""}
+
+                <button
+                    class="btn ${canPayNow ? "btn-outline" : "btn-primary"}"
+                    onclick="tracking()">
+                    ${canPayNow ? "Bayar Nanti" : "Lihat Status Pesanan"}
+                </button>
+            </section>
+        `;
+    } catch (error) {
+        alert(error.message);
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = buttonLabel;
+        }
+    }
+}
+
+/* =========================
+   PEMBAYARAN MANUAL
+========================= */
+
+const PAYMENT_LABELS = {
+    unpaid: "Belum dibayar",
+    pending: "Belum selesai",
+    menunggu_verifikasi: "Menunggu verifikasi admin",
+    paid: "Lunas",
+    ditolak: "Ditolak",
+    expired: "Kedaluwarsa",
+    cancelled: "Dibatalkan",
+    failed: "Gagal"
+};
+
+const METHOD_LABELS = {
+    qris: "QRIS",
+    ewallet: "E-wallet",
+    bank: "Transfer bank"
+};
+
+let paymentContext = null;
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+}
+
+// Membuka halaman pembayaran untuk satu pesanan
+async function payBooking(bookingId) {
+    if (!requireLogin()) return;
+
+    try {
+        const [bookingData, infoData] = await Promise.all([
+            apiRequest(`/api/bookings/${Number(bookingId)}`),
+            apiRequest("/api/payments/info")
+        ]);
+
+        paymentContext = {
+            booking: bookingData.booking,
+            info: infoData.payment_info,
+            method: "qris"
+        };
+
+        renderPaymentPage();
     } catch (error) {
         alert(error.message);
     }
 }
 
+function renderPaymentPage() {
+    const booking = paymentContext.booking;
 
-/* =========================
-   TRACKING
-========================= */
+    document.getElementById("app").innerHTML = `
+        ${header(true)}
+
+        <section class="page">
+            <div class="container">
+                <a class="back" onclick="tracking()">
+                    ← Kembali ke Pesanan Saya
+                </a>
+
+                <div class="booking">
+                    <div class="card">
+                        <h2>Pembayaran Pesanan #${Number(booking.id)}</h2>
+                        <br>
+
+                        ${booking.payment_status === "ditolak" && booking.payment_reject_reason
+                            ? `<p style="color:#b42318">
+                                <strong>Bukti sebelumnya ditolak:</strong>
+                                ${escapeHtml(booking.payment_reject_reason)}
+                               </p><br>`
+                            : ""}
+
+                        <p>Pilih metode pembayaran:</p>
+                        <br>
+
+                        <div style="display:flex;gap:10px;flex-wrap:wrap">
+                            ${Object.keys(METHOD_LABELS).map(key => `
+                                <button
+                                    id="payBtn-${key}"
+                                    class="btn btn-outline"
+                                    onclick="showPayMethod('${key}')">
+                                    ${METHOD_LABELS[key]}
+                                </button>
+                            `).join("")}
+                        </div>
+
+                        <br>
+                        <div id="payMethodDetail"></div>
+                        <br>
+
+                        <div class="form-group">
+                            <label for="proofFile">
+                                Bukti pembayaran (JPG, PNG, atau WEBP, maks. 3 MB)
+                            </label>
+                            <input
+                                type="file"
+                                id="proofFile"
+                                accept="image/jpeg,image/png,image/webp">
+                        </div>
+
+                        <button
+                            id="submitProofButton"
+                            class="btn btn-primary"
+                            style="width:100%"
+                            onclick="submitPaymentProof()">
+                            Kirim Bukti Pembayaran
+                        </button>
+
+                        <p style="margin-top:12px;font-size:13px;color:#71817b;">
+                            Admin akan mencocokkan pembayaranmu dengan mutasi
+                            yang masuk, lalu menyetujuinya.
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Ringkasan Pesanan</h3>
+                        <br>
+
+                        <p>Layanan:<br>
+                            <strong>${escapeHtml(booking.service_name)}</strong>
+                        </p>
+                        <br>
+
+                        <p>Paket:<br>
+                            <strong>${escapeHtml(booking.package_name)}</strong>
+                        </p>
+                        <br>
+
+                        <hr style="margin:20px 0;">
+
+                        <p style="font-size:12px;color:#71817b;">
+                            Total yang harus dibayar
+                        </p>
+                        <h2 style="color:#086b58">
+                            ${formatRupiah(booking.amount)}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+        </section>
+    `;
+
+    showPayMethod(paymentContext.method);
+}
+
+// Menampilkan tujuan pembayaran sesuai metode yang dipilih
+function showPayMethod(method) {
+    if (!paymentContext) return;
+
+    paymentContext.method = method;
+
+    Object.keys(METHOD_LABELS).forEach(key => {
+        const button = document.getElementById("payBtn-" + key);
+        if (button) {
+            button.className =
+                key === method ? "btn btn-primary" : "btn btn-outline";
+        }
+    });
+
+    const info = paymentContext.info;
+    const amountText = formatRupiah(paymentContext.booking.amount);
+    let html = "";
+
+    const rows = list => list.map(item => `
+        <div style="background:#edf7ef;padding:14px;border-radius:12px;margin-bottom:10px">
+            <strong>${escapeHtml(item.name)}</strong><br>
+            ${escapeHtml(item.number)}<br>
+            <small>a.n. ${escapeHtml(item.holder)}</small>
+        </div>
+    `).join("");
+
+    if (method === "qris") {
+        html = `
+            <p>${escapeHtml(info.qris.note)}</p>
+            <br>
+            <img
+                src="${API_BASE}${escapeHtml(info.qris.image)}"
+                alt="Kode QRIS"
+                style="max-width:280px;width:100%;border-radius:12px;border:1px solid #dce7e1">
+        `;
+    } else if (method === "ewallet") {
+        html = `<p>Transfer ke salah satu e-wallet berikut:</p><br>${rows(info.ewallets)}`;
+    } else {
+        html = `<p>Transfer ke salah satu rekening berikut:</p><br>${rows(info.banks)}`;
+    }
+
+    document.getElementById("payMethodDetail").innerHTML = `
+        <p style="margin-bottom:12px">
+            Nominal yang harus dibayar: <strong>${amountText}</strong>
+        </p>
+        ${html}
+    `;
+}
+
+// Mengunggah bukti pembayaran
+async function submitPaymentProof() {
+    if (!requireLogin() || !paymentContext) return;
+
+    const input = document.getElementById("proofFile");
+    const file = input && input.files ? input.files[0] : null;
+
+    if (!file) {
+        alert("Pilih file bukti pembayaran terlebih dahulu.");
+        return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        alert("Bukti pembayaran harus berupa gambar JPG, PNG, atau WEBP.");
+        return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+        alert("Ukuran file maksimal 3 MB.");
+        return;
+    }
+
+    const button = document.getElementById("submitProofButton");
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Mengirim...";
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append("payment_method", paymentContext.method);
+        formData.append("proof", file);
+
+        const response = await fetch(
+            `${API_BASE}/api/payments/proof/${Number(paymentContext.booking.id)}`,
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${authToken}` },
+                body: formData
+            }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.message || `Permintaan gagal (${response.status})`);
+        }
+
+        alert(data.message || "Bukti pembayaran terkirim.");
+        paymentContext = null;
+        tracking();
+    } catch (error) {
+        alert(error.message);
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = "Kirim Bukti Pembayaran";
+        }
+    }
+}
+
+// Melihat bukti pembayaran milik sendiri
+async function viewPaymentProof(bookingId) {
+    if (!requireLogin()) return;
+
+    const win = window.open("about:blank", "_blank");
+
+    try {
+        const response = await fetch(
+            `${API_BASE}/api/payments/proof/${Number(bookingId)}`,
+            { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || "Bukti pembayaran tidak ditemukan.");
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        if (win) {
+            win.location.href = url;
+        } else {
+            window.location.href = url;
+        }
+    } catch (error) {
+        if (win) win.close();
+        alert(error.message);
+    }
+}
 
 async function tracking() {
     if (!requireLogin()) return;
-    document.getElementById("app").innerHTML = `${header(true)}<section class="page"><div class="container"><p>Memuat pesanan...</p></div></section>`;
+
+    document.getElementById("app").innerHTML = `
+        ${header(true)}
+        <section class="page">
+            <div class="container">
+                <p>Memuat pesanan...</p>
+            </div>
+        </section>
+    `;
+
     try {
         const data = await apiRequest("/api/bookings/mine");
         const bookings = data.bookings || [];
+
         document.getElementById("app").innerHTML = `
-        ${header(true)}
-        <section class="page">
-          <div class="container">
-            <a class="back" onclick="dashboard()">← Kembali ke Dashboard</a>
-            <div class="section-title"><h2>Pesanan Saya</h2><p>Status pesanan yang tersimpan di database ArsipGo.</p></div>
-            ${bookings.length ? `<div class="cards">${bookings.map(b => `
-              <div class="card">
-                <h3>${b.service_name}</h3>
-                <p>Nomor pesanan: <strong>#${b.id}</strong></p>
-                <p>Paket: ${b.package_name}</p>
-                <p>Status: <strong>${b.status}</strong></p>
-                <p>${b.description}</p>
-                <p style="font-size:12px;color:#71817b">Dibuat: ${new Date(b.created_at).toLocaleString("id-ID")}</p>
-              </div>`).join("")}</div>` : `<div class="card"><p>Belum ada pesanan di akun ini.</p><br><button class="btn btn-primary" onclick="services()">Pesan Layanan</button></div>`}
-          </div>
-        </section>`;
+            ${header(true)}
+
+            <section class="page">
+                <div class="container">
+                    <a class="back" onclick="dashboard()">
+                        ← Kembali ke Dashboard
+                    </a>
+
+                    <div class="section-title">
+                        <h2>Pesanan Saya</h2>
+                        <p>
+                            Pantau status pesanan dan pembayaran ArsipGo.
+                        </p>
+                    </div>
+
+                    ${bookings.length
+                        ? `<div class="cards">
+                            ${bookings.map(b => {
+                                const paymentStatus =
+                                    b.payment_status || "unpaid";
+
+                                const hasAmount =
+                                    b.amount != null && Number(b.amount) > 0;
+
+                                const amount = hasAmount
+                                    ? formatRupiah(b.amount)
+                                    : "Menunggu penetapan admin";
+
+                                const canPay =
+                                    b.status !== "dibatalkan" &&
+                                    hasAmount &&
+                                    ["unpaid", "pending", "ditolak"].includes(paymentStatus);
+
+                                return `
+                                    <div class="card">
+                                        <h3>${escapeHtml(b.service_name)}</h3>
+
+                                        <p>Nomor pesanan:
+                                            <strong>#${Number(b.id)}</strong>
+                                        </p>
+
+                                        <p>Paket: ${escapeHtml(b.package_name)}</p>
+
+                                        <p>Status pesanan:
+                                            <strong>${escapeHtml(b.status)}</strong>
+                                        </p>
+
+                                        <p>Status pembayaran:
+                                            <strong>${escapeHtml(PAYMENT_LABELS[paymentStatus] || paymentStatus)}</strong>
+                                        </p>
+
+                                        ${b.payment_method
+                                            ? `<p>Metode:
+                                                <strong>${escapeHtml(METHOD_LABELS[b.payment_method] || b.payment_method)}</strong>
+                                               </p>`
+                                            : ""}
+
+                                        <p>Total:
+                                            <strong>${amount}</strong>
+                                        </p>
+
+                                        <p>${escapeHtml(b.description || "")}</p>
+
+                                        <p style="font-size:12px;color:#71817b">
+                                            Dibuat:
+                                            ${new Date(b.created_at).toLocaleString("id-ID")}
+                                        </p>
+
+                                        ${canPay
+                                            ? `<button
+                                                class="btn btn-primary"
+                                                onclick="payBooking(${Number(b.id)})">
+                                                ${paymentStatus === "ditolak"
+                                                    ? "Kirim Ulang Bukti Bayar"
+                                                    : "Bayar Sekarang"}
+                                               </button>`
+                                            : ""}
+
+                                        ${paymentStatus === "menunggu_verifikasi"
+                                            ? `<p style="margin-top:12px;color:#71817b">
+                                                Bukti pembayaran sedang diperiksa admin.
+                                               </p>
+                                               <button
+                                                class="btn btn-outline"
+                                                style="margin-top:8px"
+                                                onclick="viewPaymentProof(${Number(b.id)})">
+                                                Lihat Bukti
+                                               </button>`
+                                            : ""}
+
+                                        ${paymentStatus === "ditolak" && b.payment_reject_reason
+                                            ? `<p style="margin-top:12px;color:#b42318">
+                                                Ditolak: ${escapeHtml(b.payment_reject_reason)}
+                                               </p>`
+                                            : ""}
+
+                                        ${!hasAmount && b.status !== "dibatalkan"
+                                            ? `<p style="margin-top:12px;color:#71817b">
+                                                Menunggu admin menetapkan harga sebelum pembayaran.
+                                               </p>`
+                                            : ""}
+
+                                        ${paymentStatus === "paid"
+                                            ? `<p style="margin-top:12px">
+                                                Pembayaran berhasil diterima.
+                                               </p>`
+                                            : ""}
+                                    </div>
+                                `;
+                            }).join("")}
+                        </div>`
+                        : `<div class="card">
+                            <p>Belum ada pesanan di akun ini.</p>
+                            <br>
+                            <button
+                                class="btn btn-primary"
+                                onclick="services()">
+                                Pesan Layanan
+                            </button>
+                        </div>`
+                    }
+                </div>
+            </section>
+        `;
     } catch (error) {
         alert(error.message);
         dashboard();
     }
 }
-
 
 function timeline(icon,title,text) {
 

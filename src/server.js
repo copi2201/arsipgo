@@ -8,6 +8,7 @@ const authRoutes = require("./routes/auth.routes");
 const serviceRoutes = require("./routes/services.routes");
 const bookingRoutes = require("./routes/bookings.routes");
 const adminRoutes = require("./routes/admin.routes");
+const paymentRoutes = require("./routes/payments.routes"); 
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -42,6 +43,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use((req, res) => res.status(404).json({ message: "Endpoint tidak ditemukan." }));
 app.use((error, req, res, next) => {

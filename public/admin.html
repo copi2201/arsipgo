@@ -25,7 +25,7 @@
 
     <section id="dashboardPanel" hidden>
       <div class="heading">
-        <div><p class="eyebrow">PANEL PENGELOLAAN</p><h1>Dashboard Admin</h1><p>Kelola pesanan layanan kearsipan.</p></div>
+        <div><p class="eyebrow">PANEL PENGELOLAAN</p><h1>Dashboard Admin</h1><p>Kelola pesanan dan verifikasi pembayaran layanan kearsipan.</p></div>
         <button id="refreshBtn" class="button ghost">Muat ulang</button>
       </div>
       <div id="summary" class="summary"></div>
@@ -33,20 +33,27 @@
         <div class="filters">
           <input id="searchInput" type="search" placeholder="Cari nama, email, atau nomor pesanan">
           <select id="statusFilter">
-            <option value="">Semua status</option>
+            <option value="">Semua status pesanan</option>
             <option value="menunggu_konfirmasi">Menunggu konfirmasi</option>
             <option value="dikonfirmasi">Dikonfirmasi</option>
             <option value="diproses">Diproses</option>
             <option value="selesai">Selesai</option>
             <option value="dibatalkan">Dibatalkan</option>
           </select>
+          <select id="paymentFilter">
+            <option value="">Semua status pembayaran</option>
+            <option value="menunggu_verifikasi">Menunggu verifikasi</option>
+            <option value="paid">Lunas</option>
+            <option value="unpaid">Belum dibayar</option>
+            <option value="ditolak">Ditolak</option>
+          </select>
           <button id="filterBtn" class="button primary">Terapkan</button>
         </div>
         <p id="tableMessage" class="message" role="status"></p>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Layanan & detail</th><th>Tanggal mulai</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody id="bookingRows"><tr><td colspan="6">Silakan masuk sebagai admin.</td></tr></tbody>
+            <thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Layanan & detail</th><th>Tanggal mulai</th><th>Status</th><th>Pembayaran</th><th>Aksi</th></tr></thead>
+            <tbody id="bookingRows"><tr><td colspan="7">Silakan masuk sebagai admin.</td></tr></tbody>
           </table>
         </div>
       </section>
