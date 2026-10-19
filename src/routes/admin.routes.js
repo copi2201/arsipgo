@@ -95,7 +95,7 @@ router.get("/bookings", async (req, res, next) => {
                    b.payment_method,
                    b.payment_proof_uploaded_at,
                    b.payment_reject_reason,
-
+                   (b.payment_proof_data IS NOT NULL) AS has_proof,
                    u.name AS customer_name, u.email AS customer_email, u.whatsapp,
                    s.name AS service_name
             FROM bookings b
@@ -106,7 +106,7 @@ router.get("/bookings", async (req, res, next) => {
             LIMIT 200
         `;
         const result = await pool.query(query, params);
-        res.json({ bookings: result.rows });
+                res.json({ bookings: result.rows });
     } catch (error) { next(error); }
 });
 
@@ -148,17 +148,13 @@ router.patch("/bookings/:id/payment", async (req, res, next) => {
         let result;
 
         if (action === "approve") {
-                        result = await pool.query(
+            result = await pool.query(
                 `UPDATE bookings
                  SET payment_status = 'paid',
                      paid_at = COALESCE(paid_at, NOW()),
-                     payment_reject_reason = NULL,
-                     status = CASE
-                         WHEN status = 'menunggu_konfirmasi' THEN 'dikonfirmasi'
-                         ELSE status
-                     END
+                     payment_reject_reason = NULL
                  WHERE id = $1 AND payment_status = 'menunggu_verifikasi'
-                 RETURNING id, payment_status, paid_at, status`,
+                 RETURNING id, payment_status, paid_at`,
                 [id]
             );
         } else {
